@@ -21,28 +21,51 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Função para carregar os últimos lançamentos de questões
+    // Função para carregar os últimos lançamentos de questões e logs de deleção
     async function carregarUltimosLancamentos() {
         try {
-            const response = await fetch('/api/registros/recentes');
-            const registros = await response.json();
+            // Buscar registros e logs em paralelo
+            const [resRegistros, resLogs] = await Promise.all([
+                fetch('/api/registros/recentes'),
+                fetch('/api/logs-delecao')
+            ]);
+
+            const registros = await resRegistros.json();
+            const logs = await resLogs.json();
+
+            // Mesclar e ordenar por ID (mais recentes primeiro)
+            const todosDados = [...registros, ...logs];
+
             ultimosLancamentosList.innerHTML = ''; // Limpa a lista
 
-            if (registros.length === 0) {
-                 ultimosLancamentosList.innerHTML = '<li>Nenhum registro recente.</li>';
+            if (todosDados.length === 0) {
+                ultimosLancamentosList.innerHTML = '<li>Nenhum registro recente.</li>';
             } else {
-                registros.forEach(r => {
+                todosDados.forEach(item => {
                     const li = document.createElement('li');
-                    li.innerHTML = `
-                        <span>${r.aluno_nome}: ${r.acertos} acertos de ${r.questoes} questões</span>
-                        <button class="delete-btn" data-id="${r.id}">Apagar</button>
-                    `;
+
+                    if (item.tipo === 'delecao') {
+                        // Log de deleção - não tem botão apagar
+                        li.className = 'log-delecao';
+                        li.innerHTML = `
+                            <span style="color: #ff6b6b; font-style: italic;">
+                                ${item.deletado_por} apagou: ${item.aluno_registro} - ${item.acertos} acertos de ${item.questoes} questões
+                            </span>
+                        `;
+                    } else {
+                        // Registro normal - tem botão apagar
+                        li.innerHTML = `
+                            <span>${item.aluno_nome}: ${item.acertos} acertos de ${item.questoes} questões</span>
+                            <button class="delete-btn" data-id="${item.id}">Apagar</button>
+                        `;
+                    }
+
                     ultimosLancamentosList.appendChild(li);
                 });
             }
         } catch (error) {
             console.error('Erro ao carregar últimos lançamentos:', error);
-             ultimosLancamentosList.innerHTML = '<li>Erro ao carregar lançamentos.</li>';
+            ultimosLancamentosList.innerHTML = '<li>Erro ao carregar lançamentos.</li>';
         }
     }
 
@@ -57,8 +80,8 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         // Validação simples
         if (!dados.aluno_id) {
-             alert('Selecione um aluno.');
-             return;
+            alert('Selecione um aluno.');
+            return;
         }
         if (parseInt(dados.acertos) > parseInt(dados.quantidade)) {
             alert('O número de acertos não pode ser maior que a quantidade de questões.');
@@ -77,32 +100,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 await carregarUltimosLancamentos(); // Atualiza a lista de lançamentos
                 alert('Registro adicionado com sucesso!');
             } else {
-                 const result = await response.json().catch(() => ({})); // Tenta pegar erro do backend
-                 alert(`Falha ao salvar o registro. ${result.mensagem || ''}`);
+                const result = await response.json().catch(() => ({})); // Tenta pegar erro do backend
+                alert(`Falha ao salvar o registro. ${result.mensagem || ''}`);
             }
         } catch (error) {
             console.error('Erro ao enviar registro:', error);
-             alert('Erro de comunicação ao salvar registro.');
+            alert('Erro de comunicação ao salvar registro.');
         }
     });
 
     // Lógica para escutar cliques nos botões de apagar na lista de últimos lançamentos
     ultimosLancamentosList.addEventListener('click', async (event) => {
         if (event.target.classList.contains('delete-btn')) {
+            // Verificar se há aluno selecionado
+            const alunoSelecionadoId = alunoSelect.value;
+            if (!alunoSelecionadoId) {
+                alert('Você precisa selecionar seu nome antes de apagar um registro!');
+                return;
+            }
+
             const registroId = event.target.dataset.id;
             if (confirm('Tem certeza que deseja apagar este registro?')) {
                 try {
                     const response = await fetch(`/api/registros/${registroId}`, {
-                        method: 'DELETE'
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ deletado_por_id: alunoSelecionadoId })
                     });
                     if (response.ok) {
                         await carregarUltimosLancamentos(); // Se apagou, recarrega a lista
                     } else {
-                        alert('Falha ao apagar o registro.');
+                        const result = await response.json().catch(() => ({}));
+                        alert(`Falha ao apagar o registro. ${result.erro || ''}`);
                     }
                 } catch (error) {
                     console.error('Erro ao apagar registro:', error);
-                     alert('Erro de comunicação ao apagar registro.');
+                    alert('Erro de comunicação ao apagar registro.');
                 }
             }
         }

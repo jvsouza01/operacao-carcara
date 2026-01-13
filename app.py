@@ -9,8 +9,14 @@ app = Flask(__name__)
 
 # --- CONFIGURAÇÃO DO BANCO DE DADOS ---
 db_url = os.environ.get("DATABASE_URL")
-if db_url and db_url.startswith("postgres://"):
+
+# Se não houver DATABASE_URL (teste local), usa SQLite
+if not db_url:
+    db_url = 'sqlite:///mentoria_local.db'
+    print("⚠️  Usando SQLite local para testes: mentoria_local.db")
+elif db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
+    print("✅ Conectando ao PostgreSQL em produção")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -54,6 +60,15 @@ class ResultadosSimulados(db.Model):
     aluno = db.relationship('Alunos', backref=db.backref('resultados_simulados', lazy=True))
     simulado = db.relationship('Simulados', backref=db.backref('resultados_simulados', lazy=True))
 
+class LogsDelecao(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    deletado_por_id = db.Column(db.Integer, db.ForeignKey('alunos.id'), nullable=False)
+    aluno_registro_nome = db.Column(db.String(100), nullable=False)
+    quantidade_questoes = db.Column(db.Integer, nullable=False)
+    acertos = db.Column(db.Integer, nullable=False)
+    data_delecao = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    
+    deletado_por = db.relationship('Alunos', backref=db.backref('logs_delecao', lazy=True))
 
 # --- ROTA DE SETUP ---
 @app.route('/_iniciar_banco_de_dados_uma_vez')
@@ -204,8 +219,9 @@ def get_placar_times():
             }
 
         return jsonify({
-            'Alpha': buscar_dados_time('Alpha'),
-            'Omega': buscar_dados_time('Omega')
+            'Carcara': buscar_dados_time('Carcará'),
+            'SemDescansos': buscar_dados_time('Os sem descansos'),
+            'Cerberus': buscar_dados_time('Os Cerberus')
         })
 
 # Atualize a API de alunos para retornar o time atual também
@@ -232,6 +248,14 @@ def migrar_times():
         if "already exists" in str(e):
              return "A coluna 'time' já existe, tudo certo.", 200
         return f"Erro ao adicionar coluna: {e}", 500
+
+@app.route('/_migrar_logs_delecao')
+def migrar_logs_delecao():
+    try:
+        db.create_all()
+        return "Tabela de logs de deleção criada com sucesso!", 200
+    except Exception as e:
+        return f"Erro ao criar tabela de logs: {e}", 500
     
 # --- ROTAS DE GERENCIAMENTO DE ALUNOS ---
 
@@ -311,15 +335,46 @@ def add_registro():
 @app.route('/api/registros/recentes', methods=['GET'])
 def get_registros_recentes():
     registros = RegistrosQuestoes.query.order_by(RegistrosQuestoes.id.desc()).limit(10).all()
-    lista_registros = [{'id': r.id, 'aluno_nome': r.aluno.nome, 'questoes': r.quantidade_questoes, 'acertos': r.acertos} for r in registros]
+    lista_registros = [{'id': r.id, 'aluno_nome': r.aluno.nome, 'questoes': r.quantidade_questoes, 'acertos': r.acertos, 'tipo': 'registro'} for r in registros]
     return jsonify(lista_registros)
+
+@app.route('/api/logs-delecao', methods=['GET'])
+def get_logs_delecao():
+    logs = LogsDelecao.query.order_by(LogsDelecao.id.desc()).limit(5).all()
+    lista_logs = [{
+        'id': f"log-{log.id}",
+        'deletado_por': log.deletado_por.nome,
+        'aluno_registro': log.aluno_registro_nome,
+        'questoes': log.quantidade_questoes,
+        'acertos': log.acertos,
+        'tipo': 'delecao'
+    } for log in logs]
+    return jsonify(lista_logs)
 
 @app.route('/api/registros/<int:registro_id>', methods=['DELETE'])
 def delete_registro(registro_id):
+    dados = request.get_json()
+    deletado_por_id = dados.get('deletado_por_id')
+    
+    if not deletado_por_id:
+        return jsonify({'erro': 'É necessário informar quem está apagando (deletado_por_id).'}), 400
+    
     registro = RegistrosQuestoes.query.get_or_404(registro_id)
+    
+    # Salvar informações do registro antes de apagar para o log
+    log = LogsDelecao(
+        deletado_por_id=deletado_por_id,
+        aluno_registro_nome=registro.aluno.nome,
+        quantidade_questoes=registro.quantidade_questoes,
+        acertos=registro.acertos
+    )
+    
+    # Apagar o registro e criar o log
     db.session.delete(registro)
+    db.session.add(log)
     db.session.commit()
-    return jsonify({'status': 'sucesso', 'mensagem': 'Registro apagado.'})
+    
+    return jsonify({'status': 'sucesso', 'mensagem': 'Registro apagado e log criado.'})
 
 @app.route('/api/rankings', methods=['GET'])
 def get_rankings():
@@ -358,7 +413,7 @@ def get_rankings_semana_passada():
     query_perc = text('SELECT a.nome, (SUM(r.acertos) * 100.0 / SUM(r.quantidade_questoes)) as percentual FROM registros_questoes r JOIN alunos a ON a.id = r.aluno_id WHERE r.data_registro BETWEEN :start AND :end GROUP BY a.nome HAVING SUM(r.quantidade_questoes) > 20 ORDER BY percentual DESC')
     ranking_percentual = conn.execute(query_perc, params).mappings().all()
 
-    # 3. Batalha de Times (MANTIDA IGUAL)
+    # 3. Batalha de Times (MODIFICADO PARA 3 TIMES)
     def calcular_time(nome_time):
         sql = text("""
             SELECT SUM(r.quantidade_questoes) as total_q, SUM(r.acertos) as total_a 
@@ -374,17 +429,33 @@ def get_rankings_semana_passada():
         precisao = (total_a / total_q * 100) if total_q > 0 else 0
         return {'questoes': total_q, 'precisao': round(precisao, 2)}
 
-    alpha = calcular_time('Alpha')
-    omega = calcular_time('Omega')
+    carcara = calcular_time('Carcará')
+    sem_descansos = calcular_time('Os sem descansos')
+    cerberus = calcular_time('Os Cerberus')
 
-    vencedor = "EMPATE"
-    if alpha['questoes'] > omega['questoes']: vencedor = "ALPHA 🔵"
-    elif omega['questoes'] > alpha['questoes']: vencedor = "OMEGA 🔴"
+    # Determinar vencedor entre 3 times
+    times = [
+        ('CARCARÁ 🦅', carcara['questoes']),
+        ('SEM DESCANSOS 💪', sem_descansos['questoes']),
+        ('CERBERUS 🐺', cerberus['questoes'])
+    ]
+    max_questoes = max(times, key=lambda x: x[1])[1]
+    vencedores = [t[0] for t in times if t[1] == max_questoes]
+    
+    if len(vencedores) > 1:
+        vencedor = "EMPATE"
+    else:
+        vencedor = vencedores[0]
 
     return jsonify({
         'quantidade': [dict(row) for row in ranking_quantidade], 
         'percentual': [dict(row) for row in ranking_percentual],
-        'batalha': {'Alpha': alpha, 'Omega': omega, 'vencedor': vencedor},
+        'batalha': {
+            'Carcara': carcara, 
+            'SemDescansos': sem_descansos, 
+            'Cerberus': cerberus, 
+            'vencedor': vencedor
+        },
         # --- NOVO: Envia as datas formatadas ---
         'periodo': {
             'inicio': start_of_last_week.strftime('%d/%m/%Y'),
@@ -507,3 +578,10 @@ def get_consulta_desempenho():
     except Exception as e:
         db.session.rollback()
         return jsonify({'erro': f'Erro ao consultar o banco de dados: {e}'}), 500
+
+# --- EXECUÇÃO LOCAL ---
+if __name__ == '__main__':
+    print("\n" + "="*50)
+    print("🚀 Servidor Flask Iniciando...")
+    print("="*50 + "\n")
+    app.run(debug=True, host='127.0.0.1', port=5000)

@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    
+
     // Variável para guardar o título original da página
     let tituloOriginal = document.title;
     let nomeArquivoPDF = "Ranking_Semana_Passada";
@@ -11,8 +11,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // --- 1. Atualizar Datas e Título ---
             if (data.periodo) {
-                // Atualiza o texto na tela
-                const textoPeriodo = `Período: ${data.periodo.inicio} até ${data.periodo.fim}`;
+                // Atualiza o texto na tela (agora no h1)
+                const textoPeriodo = `Ranking ${data.periodo.inicio} a ${data.periodo.fim}`;
                 document.getElementById('periodo-texto').innerText = textoPeriodo;
 
                 // Prepara o nome do arquivo para o PDF (Substitui barras por traços)
@@ -22,17 +22,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 nomeArquivoPDF = `Ranking_${inicioLimpo}_a_${fimLimpo}`;
             }
 
-            // --- 2. Preencher Batalha de Times ---
+            // --- 2. Preencher Batalha de Times (3 PELOTÕES) ---
             if (data.batalha) {
-                const alphaDiv = document.getElementById('bat-alpha-qtd').parentElement;
-                alphaDiv.classList.add('text-alpha');
-                const omegaDiv = document.getElementById('bat-omega-qtd').parentElement;
-                omegaDiv.classList.add('text-omega');
+                // Carcará
+                document.getElementById('bat-carcara-qtd').innerText = data.batalha.Carcara.questoes;
+                document.getElementById('bat-carcara-perc').innerText = data.batalha.Carcara.precisao + '%';
 
-                document.getElementById('bat-alpha-qtd').innerText = data.batalha.Alpha.questoes;
-                document.getElementById('bat-alpha-perc').innerText = data.batalha.Alpha.precisao + '%';
-                document.getElementById('bat-omega-qtd').innerText = data.batalha.Omega.questoes;
-                document.getElementById('bat-omega-perc').innerText = data.batalha.Omega.precisao + '%';
+                // Os sem descansos
+                document.getElementById('bat-semdescansos-qtd').innerText = data.batalha.SemDescansos.questoes;
+                document.getElementById('bat-semdescansos-perc').innerText = data.batalha.SemDescansos.precisao + '%';
+
+                // Os Cerberus
+                document.getElementById('bat-cerberus-qtd').innerText = data.batalha.Cerberus.questoes;
+                document.getElementById('bat-cerberus-perc').innerText = data.batalha.Cerberus.precisao + '%';
+
+                // Vencedor
                 document.getElementById('bat-vencedor').innerText = data.batalha.vencedor;
             }
 
@@ -51,17 +55,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         [1, 2, 3].forEach(i => {
             const elName = document.getElementById(`podium-${prefixo}-${i}-name`);
             const elScore = document.getElementById(`podium-${prefixo}-${i}-score`);
-            if(elName) elName.innerText = '---';
-            if(elScore) elScore.innerText = `--- ${unidade}`;
+            if (elName) elName.innerText = '---';
+            if (elScore) elScore.innerText = `--- ${unidade}`;
         });
         lista.slice(0, 3).forEach((p, index) => {
             const i = index + 1;
             const elName = document.getElementById(`podium-${prefixo}-${i}-name`);
             const elScore = document.getElementById(`podium-${prefixo}-${i}-score`);
             let val = p[campoValor];
-            if(unidade === '%') val = parseFloat(val).toFixed(2);
-            if(elName) elName.innerText = p.nome;
-            if(elScore) elScore.innerText = `${val} ${unidade}`;
+            if (unidade === '%') val = parseFloat(val).toFixed(2);
+            if (elName) elName.innerText = p.nome;
+            if (elScore) elScore.innerText = `${val} ${unidade}`;
         });
     }
 
@@ -71,7 +75,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         for (let i = 3; i < lista.length; i++) {
             const item = lista[i];
             let valor = item[campoValor];
-            if(unidade === '%') valor = parseFloat(valor).toFixed(2);
+            if (unidade === '%') valor = parseFloat(valor).toFixed(2);
             const li = document.createElement('li');
             li.innerHTML = `<span>${i + 1}. ${item.nome}</span><strong>${valor} ${unidade}</strong>`;
             ol.appendChild(li);
@@ -84,7 +88,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnPdf.addEventListener('click', () => {
             // 1. Muda o título da página (isso define o nome do arquivo PDF)
             document.title = nomeArquivoPDF;
-            
+
             // 2. Abre a impressão
             window.print();
 
