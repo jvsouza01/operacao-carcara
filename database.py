@@ -3,7 +3,7 @@ import sqlite3
 # Função para criar a conexão com o banco de dados
 def conectar():
     """Conecta ao banco de dados SQLite e retorna o objeto de conexão e o cursor."""
-    conn = sqlite3.connect('mentoria.db')
+    conn = sqlite3.connect('carcara.db')
     return conn
 
 # Função para criar as tabelas iniciais

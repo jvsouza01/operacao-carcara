@@ -12,8 +12,8 @@ db_url = os.environ.get("DATABASE_URL")
 
 # Se não houver DATABASE_URL (teste local), usa SQLite
 if not db_url:
-    db_url = 'sqlite:///mentoria_local.db'
-    print("⚠️  Usando SQLite local para testes: mentoria_local.db")
+    db_url = 'sqlite:///carcara_local.db'
+    print("⚠️  Usando SQLite local para testes: carcara_local.db")
 elif db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
     print("✅ Conectando ao PostgreSQL em produção")

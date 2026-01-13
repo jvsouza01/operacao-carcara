@@ -24,7 +24,7 @@ python app.py
 
 Você verá:
 ```
-⚠️  Usando SQLite local para testes: mentoria_local.db
+⚠️  Usando SQLite local para testes: carcara_local.db
  * Running on http://127.0.0.1:5000
 ```
 
@@ -93,7 +93,7 @@ No terminal onde o servidor está rodando:
 ## 📁 Arquivos Gerados
 
 Após rodar localmente, você verá:
-- `mentoria_local.db` - Banco SQLite local (não fazer commit!)
+- `carcara_local.db` - Banco SQLite local (não fazer commit!)
 
 ## 🚀 Quando Subir para Produção
 
