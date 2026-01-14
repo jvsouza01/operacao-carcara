@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: operacao-carcara
+    runtime: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: pip install -r operacao_carcara/requirements.txt
+    startCommand: gunicorn -w 4 -b 0.0.0.0:$PORT operacao_carcara.app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: DATABASE_URL
+        sync: false
