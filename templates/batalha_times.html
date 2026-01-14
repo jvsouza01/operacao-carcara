@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Batalha de Times - Operação Carcará</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <h1>Batalha de Pelotões (Semanal)</h1>
+
+    <div class="container flex-column flex-center">
+
+        <div class="grid-3 gap-15 w-100 max-w-1200 mt-20">
+            <div class="team-card carcara-card">
+                <h2>PELOTÃO CARCARÁ</h2>
+                <div class="score-big" id="carcara-questoes">0</div>
+                <div class="stat-label">Questões Realizadas</div>
+                <hr style="opacity: 0.3; margin: 15px 0;">
+                <div style="font-size: 1.5em;" id="carcara-precisao">0%</div>
+                <div class="stat-label">Precisão de Acertos</div>
+            </div>
+
+            <div class="team-card semdescansos-card">
+                <h2>OS SEM DESCANSOS</h2>
+                <div class="score-big" id="semdescansos-questoes">0</div>
+                <div class="stat-label">Questões Realizadas</div>
+                <hr style="opacity: 0.3; margin: 15px 0;">
+                <div style="font-size: 1.5em;" id="semdescansos-precisao">0%</div>
+                <div class="stat-label">Precisão de Acertos</div>
+            </div>
+
+            <div class="team-card cerberus-card">
+                <h2>OS CERBERUS</h2>
+                <div class="score-big" id="cerberus-questoes">0</div>
+                <div class="stat-label">Questões Realizadas</div>
+                <hr style="opacity: 0.3; margin: 15px 0;">
+                <div style="font-size: 1.5em;" id="cerberus-precisao">0%</div>
+                <div class="stat-label">Precisão de Acertos</div>
+            </div>
+        </div>
+
+        <div class="rankings-wrapper">
+            <div class="ranking-col">
+                <h3 class="carcara-title">Membros Carcará</h3>
+                <ul id="lista-carcara" class="membro-list">
+                    <li>Carregando...</li>
+                </ul>
+            </div>
+
+            <div class="ranking-col">
+                <h3 class="semdescansos-title">Membros Os sem descansos</h3>
+                <ul id="lista-semdescansos" class="membro-list">
+                    <li>Carregando...</li>
+                </ul>
+            </div>
+
+            <div class="ranking-col">
+                <h3 class="cerberus-title">Membros Os Cerberus</h3>
+                <ul id="lista-cerberus" class="membro-list">
+                    <li>Carregando...</li>
+                </ul>
+            </div>
+        </div>
+
+        <button onclick="carregarPlacar()" class="btn-atualizar">
+            🔄 Atualizar Placar
+        </button>
+    </div>
+
+    <a href="/" class="mt-20 text-bold">Voltar para a Página Principal</a>
+
+    <script>
+        async function carregarPlacar() {
+            try {
+                const res = await fetch('/api/batalha/placar');
+                const dados = await res.json();
+
+                // 1. Atualiza Cards Principais (Totais) - 3 times
+                animateValue("carcara-questoes", document.getElementById("carcara-questoes").innerText, dados.Carcara.questoes, 1000);
+                document.getElementById('carcara-precisao').innerText = dados.Carcara.precisao + "%";
+
+                animateValue("semdescansos-questoes", document.getElementById("semdescansos-questoes").innerText, dados.SemDescansos.questoes, 1000);
+                document.getElementById('semdescansos-precisao').innerText = dados.SemDescansos.precisao + "%";
+
+                animateValue("cerberus-questoes", document.getElementById("cerberus-questoes").innerText, dados.Cerberus.questoes, 1000);
+                document.getElementById('cerberus-precisao').innerText = dados.Cerberus.precisao + "%";
+
+                // 2. Atualiza Listas Individuais - 3 listas
+                atualizarLista('lista-carcara', dados.Carcara.ranking, 'carcara-item');
+                atualizarLista('lista-semdescansos', dados.SemDescansos.ranking, 'semdescansos-item');
+                atualizarLista('lista-cerberus', dados.Cerberus.ranking, 'cerberus-item');
+
+            } catch (e) { console.error(e); }
+        }
+
+        function atualizarLista(elementId, lista, itemClass) {
+            const ul = document.getElementById(elementId);
+            ul.innerHTML = ''; // Limpa a lista
+
+            if (lista.length === 0) {
+                ul.innerHTML = '<li style="text-align:center; color:#777; padding:10px;">Nenhum registro essa semana</li>';
+                return;
+            }
+
+            lista.forEach((membro, index) => {
+                const li = document.createElement('li');
+                li.className = `membro-item ${itemClass}`;
+
+                // Adiciona medalhas para o Top 3
+                let prefixo = `<span style="font-weight:bold; color:#777; width:20px;">${index + 1}.</span>`;
+                if (index === 0) prefixo = '🥇';
+                if (index === 1) prefixo = '🥈';
+                if (index === 2) prefixo = '🥉';
+
+                li.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        ${prefixo}
+                        <span class="membro-nome">${membro.nome}</span>
+                    </div>
+                    <span class="membro-qtd">${membro.qtd}</span>
+                `;
+                ul.appendChild(li);
+            });
+        }
+
+        // Função de Animação de Números
+        function animateValue(id, start, end, duration) {
+            start = Number.parseInt(start) || 0;
+            end = Number.parseInt(end) || 0;
+            if (start === end) return;
+            const obj = document.getElementById(id);
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) window.requestAnimationFrame(step);
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        carregarPlacar();
+        setInterval(carregarPlacar, 30000); // Atualiza a cada 30s
+    </script>
+</body>
+
+</html>

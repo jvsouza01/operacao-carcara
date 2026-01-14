@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Definir Times - Operação Carcará</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <h1>Gerenciar Times (3 Pelotões)</h1>
+    <div class="container flex-column">
+        <div id="lista-alunos" class="form-section w-100 max-w-900">
+            Carregando alunos...
+        </div>
+    </div>
+    <a href="/" class="mt-20">Voltar</a>
+
+    <script>
+        async function carregar() {
+            const divLista = document.getElementById('lista-alunos');
+            const res = await fetch('/api/alunos-com-time');
+            const alunos = await res.json();
+
+            divLista.innerHTML = '';
+            alunos.forEach(aluno => {
+                const row = document.createElement('div');
+                row.className = 'aluno-row';
+
+                const isCarcara = aluno.time === 'Carcará' ? 'active' : '';
+                const isSemDescansos = aluno.time === 'Os sem descansos' ? 'active' : '';
+                const isCerberus = aluno.time === 'Os Cerberus' ? 'active' : '';
+
+                row.innerHTML = `
+                    <span>${aluno.nome}</span>
+                    <div>
+                        <button onclick="salvarTime(${aluno.id}, 'Carcará')" class="btn-time carcara ${isCarcara}">Carcará 🦅</button>
+                        <button onclick="salvarTime(${aluno.id}, 'Os sem descansos')" class="btn-time semdescansos ${isSemDescansos}">Os sem descansos 💪</button>
+                        <button onclick="salvarTime(${aluno.id}, 'Os Cerberus')" class="btn-time cerberus ${isCerberus}">Os Cerberus 🐺</button>
+                    </div>
+                `;
+                divLista.appendChild(row);
+            });
+        }
+
+        async function salvarTime(id, time) {
+            await fetch('/api/alunos/atualizar-time', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ aluno_id: id, time: time })
+            });
+            carregar(); // Recarrega para atualizar as cores
+        }
+        carregar();
+    </script>
+</body>
+
+</html>

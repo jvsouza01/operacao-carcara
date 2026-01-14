@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ranking Semana Passada - Operação Carcará</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <h1 id="periodo-texto" class="text-center">Carregando...</h1>
+    <p class="text-center" style="color: #aaa; font-size: 0.95em; margin-top: -10px; margin-bottom: 30px;">Operação
+        Carcará</p>
+
+    <div class="container flex-column flex-center gap-30">
+        <section id="card-semana-passada" class="ranking-section w-100 max-w-1000">
+
+            <div class="flex flex-between flex-center mb-20">
+                <h2>Resumo Semanal</h2>
+                <button id="btn-pdf-semana-passada" class="action-button">Baixar PDF</button>
+            </div>
+
+            <div class="batalha-section">
+                <h3 class="batalha-title">
+                    ⚔️ Batalha de Pelotões
+                </h3>
+                <div class="batalha-grid">
+                    <div class="time-card carcara">
+                        <h4>CARCARÁ 🦅</h4>
+                        <div id="bat-carcara-qtd" class="time-questoes">---</div>
+                        <div class="time-label">Questões</div>
+                        <div id="bat-carcara-perc" class="time-precisao">---%</div>
+                    </div>
+
+                    <div class="time-card semdescansos">
+                        <h4>SEM DESCANSOS 💪</h4>
+                        <div id="bat-semdescansos-qtd" class="time-questoes">---</div>
+                        <div class="time-label">Questões</div>
+                        <div id="bat-semdescansos-perc" class="time-precisao">---%</div>
+                    </div>
+
+                    <div class="time-card cerberus">
+                        <h4>CERBERUS 🐺</h4>
+                        <div id="bat-cerberus-qtd" class="time-questoes">---</div>
+                        <div class="time-label">Questões</div>
+                        <div id="bat-cerberus-perc" class="time-precisao">---%</div>
+                    </div>
+
+                    <div class="vencedor-box">
+                        <span style="font-size: 0.8em; color: #aaa;">VENCEDOR</span><br>
+                        <span id="bat-vencedor" class="text-bold" style="color: var(--primary-green);">---</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ranking-columns-container">
+                <div class="ranking-column">
+                    <h3>🏆 Top 3 - Quantidade</h3>
+                    <div class="ranking-podium" id="podium-quantidade-passada">
+                        <div class="podium-spot spot-2">
+                            <div class="podium-rank">#2</div>
+                            <div class="podium-name" id="podium-qtd-passada-2-name">---</div>
+                            <div class="podium-score" id="podium-qtd-passada-2-score">---</div>
+                        </div>
+                        <div class="podium-spot spot-1">
+                            <div class="podium-rank">#1 🥇</div>
+                            <div class="podium-name" id="podium-qtd-passada-1-name">---</div>
+                            <div class="podium-score" id="podium-qtd-passada-1-score">---</div>
+                        </div>
+                        <div class="podium-spot spot-3">
+                            <div class="podium-rank">#3</div>
+                            <div class="podium-name" id="podium-qtd-passada-3-name">---</div>
+                            <div class="podium-score" id="podium-qtd-passada-3-score">---</div>
+                        </div>
+                    </div>
+                    <h4>Demais Colocações (Quantidade):</h4>
+                    <ol id="ranking-quantidade-passada-lista"></ol>
+                </div>
+
+                <div class="ranking-column">
+                    <h3>📊 Top 3 - % de Acerto</h3>
+                    <div class="ranking-podium" id="podium-percentual-passada">
+                        <div class="podium-spot spot-2">
+                            <div class="podium-rank">#2</div>
+                            <div class="podium-name" id="podium-perc-passada-2-name">---</div>
+                            <div class="podium-score" id="podium-perc-passada-2-score">---</div>
+                        </div>
+                        <div class="podium-spot spot-1">
+                            <div class="podium-rank">#1 🥇</div>
+                            <div class="podium-name" id="podium-perc-passada-1-name">---</div>
+                            <div class="podium-score" id="podium-perc-passada-1-score">---</div>
+                        </div>
+                        <div class="podium-spot spot-3">
+                            <div class="podium-rank">#3</div>
+                            <div class="podium-name" id="podium-perc-passada-3-name">---</div>
+                            <div class="podium-score" id="podium-perc-passada-3-score">---</div>
+                        </div>
+                    </div>
+                    <h4>Demais Colocações (% Acerto):</h4>
+                    <ol id="ranking-percentual-passada-lista"></ol>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <a href="/historico-questoes" class="mt-30 text-bold" style="display: block; text-align: center;">Voltar ao
+        Histórico</a>
+    <script src="{{ url_for('static', filename='ranking_semana_passada.js') }}"></script>
+</body>
+
+</html>
