@@ -97,12 +97,10 @@ def iniciar_banco():
         
         # 1. Alunos (Verifica antes de adicionar)
         lista_alunos_final = [
-            'Alan vitor', 'Andressa', 'Dann Silva', 'Davy', 'Dias', 'Dhomini', 
-            'Eduardo', 'Eliaquim', 'Ell Souza', 'Ezequias', 'Flavia Andrade', 
-            'Hélio', 'Ingrid', 'Isaac', 'Jonathan Estevam', 'Jovino', 'JP', 
-            'Leonardo', 'Liu', 'Marcela', 'Marco Antônio', 'Marcos Vinicius', 
-            'Mariana', 'Matheus Silva', 'MV', 'Nelson', 'Rafael', 'Rodrigo', 
-            'Samuel', 'Santiago', 'Silva', 'Vinicius Felipe', 'Vithor', 'Yan'
+            "Ferdandes", "Charles", "Miguel", "Leite", "Uriel", "Melo", 
+            "Matheus Oliveira", "Felipe", "Cruz", "Almeida", "Cássia", 
+            "Veida", "Santana", "Priscila", "Enzo", "Ellen", "Davi", 
+            "Ananda", "Rafael"
         ]
         alunos_adicionados = 0
         for nome_aluno in lista_alunos_final:
