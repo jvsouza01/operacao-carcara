@@ -1,4 +1,4 @@
-# 🧪 Guia de Teste Local - Operação Carcara
+# 🧪 Guia de Teste Local - Tropa do Papirante
 
 ## Pré-requisitos
 
